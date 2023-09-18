@@ -1,0 +1,269 @@
+
+```{r setup, message=FALSE, warning=FALSE}
+source("_common.R")
+
+```
+
+```{r conserved_positions}
+
+###---combined (all)------------------------------------------------------------
+conposer_id(seqs_nonred, msa="ClustalOmega") 
+
+geneplot_fil_fname <- stringr::str_interp("reports/${cur.date}/${fln.prfx}-msa-geneplot-combined_filtered_v6_KB.pdf")
+conposer_plot(seqs_nonred, geneplot_fil_fname, gap.lim=0.05)
+
+###---Type 1 TDases-------------------------------------------------------------
+conposer_id(seqs_des1, msa="ClustalOmega")
+
+geneplot_fil_fname <- stringr::str_interp("reports/${cur.date}/${fln.prfx}-msa-geneplot-clustalo-DES1_filtered_v6_KB.pdf")
+conposer_plot(seqs_des1, linecol="deepskyblue4", geneplot_fil_fname, gap.lim=0.05)
+
+###---Type 2 TDases-------------------------------------------------------------
+conposer_id(seqs_des2, msa="ClustalOmega")
+
+geneplot_fil_fname <- stringr::str_interp("reports/${cur.date}/${fln.prfx}-msa-geneplot-clustalo-des2_filtered_v6_KB.pdf")
+conposer_plot(seqs_des2, linecol="firebrick4", geneplot_fil_fname, gap.lim=0.05)
+
+
+###---combined + FMOs-----------------------------------------------------------
+conposer_id(seqs_FMO, msa="ClustalOmega")
+
+```
+
+```{r sequence_comparison}
+
+m1 <- seq_compare(seqs_allnamed, output="dist.mat")
+    
+# Export $AAID
+mat1.fname <- stringr::str_interp("${out.path}/${fln.prfx}-seqs_perID-seqs_ALL_v1.csv")
+write.csv(m1, file=mat1.fname)
+
+m2 <- seq_compare(seqs_m01B, output="dist.mat")
+    
+# Export %AAID
+mat2.fname <- stringr::str_interp("${out.path}/${fln.prfx}-seqs_perID-seqs_ALL_v1.csv")
+write.csv(m2, file=mat2.fname)
+
+```
+
+
+
+```{r mutagenesis_MICs}
+MIC.df <- mut.MIC.raw
+
+# make own dataframe for each enzyme
+tetX7.MIC.df <- subset(MIC.df, gene == "tetX7")
+tet50.MIC.df <- subset(MIC.df, gene == "tet50")
+
+# remove unnecessary columns from tetX7 frame
+tetX7.MIC.df <- subset(tetX7.MIC.df, select=-c(code, strain, TET_MIC, DOX_MIC, TIG_MIC, TET_fc, DOX_fc, TIG_fc, pos))
+# remove non-conserved positions
+tetX7.MIC.df <-  filter(tetX7.MIC.df, mutation != "I155A")
+# order mutants for fig
+    tetX7.MIC.df$mutation <- factor(tetX7.MIC.df$mutation, levels=c('WT','empty','G13A','L25A','E36A','R44A','G47A','D51A','E104A','I105A','R107A','D109A','I113A','L114A','E149A','I155A','G159A','S162A','R165A','L198A','F229A','F274A','W288A','G300A','D301A','G311A','Q312A','G313A','L328A','Y343A'))
+# remove unnecessary columns from tet50 frame
+tet50.MIC.df <- subset(tet50.MIC.df, select=-c(code, strain, TET_MIC, DOX_MIC, TIG_MIC, TET_fc, DOX_fc, TIG_fc, pos, TIG)) # NOTE: removing TIG here
+# remove non-conserved positions
+tet50.MIC.df <-  filter(tet50.MIC.df, mutation != "I153A")
+# order mutants for fig
+    tet50.MIC.df$mutation <- factor(tet50.MIC.df$mutation, levels=c('WT','empty','G11A','L23A','E34A','R40A','G43A','D47A','E102A','I103A','R105A','D107A','I111A','L112A','E147A','I153A','G157A','S160A','R163A','L192A','F223A','F266A','W279A','G288A','D289A','G299A','Q300A','G301A','L316A','Y330A'))
+
+# melt
+tetX7.MIC.final <- melt(tetX7.MIC.df)
+tet50.MIC.final <- melt(tet50.MIC.df)
+
+# Make individual for each compound, then merge. (So white = no change)
+tetX7.fig <- ggplot(tetX7.MIC.final, aes(mutation, variable, fill=value)) +
+                theme_pub() +                
+                theme(
+                    axis.line = element_line(color="white"),
+                    axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5), #, hjust=0.95
+                    axis.title.y=element_blank(),
+                    legend.position = "right"
+                    ) +
+                geom_tile(color="gray43") +
+                coord_fixed(ratio=1) +
+                scale_fill_gradient("relative MIC", high="deepskyblue4", low="white") + # scale_fill_manual
+                labs()
+
+print(tetX7.fig)
+
+tet50.fig <- ggplot(tet50.MIC.final, aes(mutation, variable, fill=value)) + 
+                theme_pub() +                
+                theme(
+                    axis.line = element_line(color="white"),
+                    axis.text.x = element_text(angle = 90, hjust=0, vjust=0.5),
+                    axis.title.x=element_blank(),
+                    axis.title.y=element_blank(),
+                    legend.position = "right"
+                    ) +
+                geom_tile(color="gray43") +
+                coord_fixed(ratio=1) +
+                scale_fill_gradient("relative MIC", high="firebrick4", low="white") + # scale_fill_manual
+                scale_x_discrete(position="top") +
+                #scale_x_discrete(limits=tetX7.MIC.final$mutation) +
+                labs()
+
+print(tet50.fig)
+
+merged.fig <- ggarrange(tet50.fig, tetX7.fig, ncol=1, nrow=2)
+
+print(merged.fig)
+
+merged.fig.fname <- stringr::str_interp("${out.path}/${fln.prfx}-mut_MIC-merged_KSB_v1.pdf")
+ggsave(merged.fig, device=cairo_pdf, filename = merged.fig.fname, width=4.75)
+
+```
+
+
+```{r domain_maps}
+
+all.len <- 358
+
+all.domain.cons <- all.domain %>%
+  subset(cons == "Y")
+all.domain.FAD <- all.domain %>% subset(dom == "FAD")
+all.domain.HEL <- all.domain %>% subset(dom == "HEL")
+all.domain.TET <- all.domain %>% subset(dom == "TET")
+
+all_domain_fname <- stringr::str_interp("reports/${cur.date}/${fln.prfx}-geneplot-all_domain_v2_KB.pdf")
+
+# all con pos plot with domains
+pdf(file=all_domain_fname, height=2.5, width=8)
+par(mfrow=c(2,1), oma= c(2,2,0,0) + 0.1, mar = c(0, 0, 0.1, 0.1) + 0.1) 
+plot(c(0, all.len), c(0,0), type="n", xlab="", ylab="", yaxt="n", xaxt="n", yaxs="i", xaxs="i") + #yaxt="n"
+  axis(1, lwd.ticks=2) +
+  abline(v=all.domain.FAD$pos, col="#FD9898", lwd=2) +
+  abline(v=all.domain.HEL$pos, col="#00BFBF", lwd=2) +
+  abline(v=all.domain.TET$pos, col="#A6E5A6", lwd=2) +
+  abline(v=all.domain.cons$pos, col="white", lwd=1) +
+  box(lwd=2)
+       
+dev.off()
+
+```
+
+```{r thermal_stability}
+
+mut.therm$Protein <- factor(mut.therm$Protein, 
+                                 levels=c("Tet50_WT", "Tet50_L23A", "Tet50_E102A",  "Tet50_D107A", "Tet50_E147A", "Tet50_S160A", "Tet50_Q300A",
+                                          "TetX7_WT", "TetX7_G47A", "TetX7_D109A", "TetX7_G311A")) # "TetX7_E104A", "TetX7_I113A", 
+
+p2.therm <- ggplot(mut.therm, aes(x=Protein, y=`Tm B - Mean`, color=type)) +
+  theme_pub() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust=1)
+  ) +
+  geom_errorbar(aes(ymin=`Tm B Lower 95%`, ymax=`Tm B Upper 95%`), width=0.75) +
+  ylim(0,60) +
+  scale_color_manual(values = type.pal) +
+  geom_point()
+
+print(p2.therm)
+
+mut.stability_fname <- stringr::str_interp("reports/${cur.date}/${fln.prfx}-mut_stability_v2_KB.pdf")
+ggsave(p2.therm, device=cairo_pdf, filename = mut.stability_fname, height=3, width=3) 
+
+
+# fractional
+mut.therm$Protein <- factor(mut.therm$Protein, 
+                                 levels=c("Tet50_WT", "Tet50_L23A", "Tet50_E102A",  "Tet50_D107A", "Tet50_E147A", "Tet50_S160A", "Tet50_Q300A",
+                                          "TetX7_WT", "TetX7_G47A", "TetX7_D109A", "TetX7_G311A")) # "TetX7_E104A", "TetX7_I113A", 
+
+p3.therm <- ggplot(mut.therm, aes(x=Protein, y=Tm_frac, color=type)) +
+  theme_pub() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust=1)
+  ) +
+  #geom_errorbar(aes(ymin=`Tm B Lower 95%`, ymax=`Tm B Upper 95%`), width=0.75) +
+  ylim(0,1.2) +
+  scale_color_manual(values = type.pal) +
+  geom_point()
+
+print(p3.therm)
+
+mut.stability_fname <- stringr::str_interp("reports/${cur.date}/${fln.prfx}-mut_stability_v3_KB.pdf")
+ggsave(p3.therm, device=cairo_pdf, filename = mut.stability_fname, height=3, width=3) 
+
+```
+
+```{r MM_kinetics}
+
+mut.kinetics.df <- mut.kinetics
+    mut.kinetics.df$`kcat/Km` <- as.numeric(mut.kinetics.df$`kcat/Km`)
+    mut.kinetics.df$`error in kcat/Km` <- as.numeric(mut.kinetics.df$`error in kcat/Km`)
+
+    
+### Tetracycline
+mut.kinetics.tet <- mut.kinetics.df %>%
+  subset(Substrate == "Tet")
+
+mut.kinetics.tet$Protein <- factor(mut.kinetics.tet$Protein, 
+                                 levels=c("Tet50_WT",  "Tet50_D107A", "Tet50_E147A",  
+                                          "TetX7_WT", "TetX7_L25A", "TetX7_G47A", "TetX7_D109A", "TetX7_I113A")) 
+
+p1.kinetics.tet <- ggplot(mut.kinetics.tet, aes(x=Protein, y=`kcat/Km`, color=type)) +
+  theme_pub() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust=1),
+    legend.position="none"
+  ) +
+  geom_errorbar(aes(ymin=(`kcat/Km`-`error in kcat/Km`), ymax=(`kcat/Km`+`error in kcat/Km`)), width=0.5) +
+  scale_color_manual(values = type.pal) +
+  geom_point() +
+  labs(title="tetracycline")
+
+print(p1.kinetics.tet)
+
+
+### Doxycycline
+mut.kinetics.dox <- mut.kinetics.df %>%
+  subset(Substrate == "Doxy")
+
+mut.kinetics.dox$Protein <- factor(mut.kinetics.dox$Protein,
+                                 levels=c("Tet50_WT",  "Tet50_D107A", "Tet50_E102A", "Tet50_E147A",
+                                          "TetX7_WT", "TetX7_L25A", "TetX7_G47A", "TetX7_D109A", "TetX7_I113A")) 
+
+
+p2.kinetics.dox <- ggplot(mut.kinetics.dox, aes(x=Protein, y=`kcat/Km`, color=type)) +
+  theme_pub() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust=1),
+    legend.position="none"
+  ) +
+  geom_errorbar(aes(ymin=(`kcat/Km`-`error in kcat/Km`), ymax=(`kcat/Km`+`error in kcat/Km`)), width=0.5) +
+  scale_color_manual(values = type.pal) +
+  geom_point() +
+  labs(title="doxycycline")
+
+print(p2.kinetics.dox)
+
+### Tigecycline
+mut.kinetics.tig <- mut.kinetics.df %>%
+  subset(Substrate == "Tig")
+
+mut.kinetics.tig$Protein <- factor(mut.kinetics.tig$Protein,
+                                 levels=c(
+                                          "TetX7_WT", "TetX7_L25A", "TetX7_G47A", "TetX7_D109A", "TetX7_I113A"))
+
+
+p3.kinetics.tig <- ggplot(mut.kinetics.tig, aes(x=Protein, y=`kcat/Km`, color=type)) +
+  theme_pub() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust=1),
+    legend.position="none"
+  ) +
+  geom_errorbar(aes(ymin=(`kcat/Km`-`error in kcat/Km`), ymax=(`kcat/Km`+`error in kcat/Km`)), width=0.5) +
+  scale_color_manual(values = type.pal) +
+  geom_point() +
+  labs(title="tigecycline")
+
+print(p3.kinetics.tig)
+
+merged.mut.kinetics <- ggarrange(p1.kinetics.tet, p2.kinetics.dox, p3.kinetics.tig, ncol=1, nrow=3)
+
+
+mut.kinetics_fname <- stringr::str_interp("reports/${cur.date}/${fln.prfx}-mut_kinetics_v1_KB.pdf")
+ggsave(merged.mut.kinetics, device=cairo_pdf, filename = mut.kinetics_fname, height=8, width=3.5)
+
+```

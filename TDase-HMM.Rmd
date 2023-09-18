@@ -1,0 +1,234 @@
+---
+title: "Profile HMM screening of TDase sequences"
+author: "Kevin S. Blake - kevin.blake@wustl.edu"
+output:
+  html_document: default
+  pdf_document: default
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+source("_common.R")
+
+```
+
+```{r HMM_thresholds}
+
+# Generate AAID matrix
+
+# hmm02_type1_AAID <- seq_compare(constructs_hmm02_type1, output="dist.mat")
+# hmm02_type2_AAID <- seq_compare(constructs_hmm02_type2, output="dist.mat")
+# hmm02_all_AAID <- seq_compare(constructs_hmm02_all, output="dist.mat")
+
+type1.hmmscore <- HMM.score %>%
+  filter(aaid_ge40 == "type1")
+
+type2.hmmscore <- HMM.score %>%
+  filter(aaid_ge40 =="type2")
+
+hmm01_roc <- roc(HMM.score$fxnl, HMM.score$`score_hmm01`)
+  #plot(hmm01_roc)
+  coords(hmm01_roc, x="best")
+
+type1_roc <- roc(type1.hmmscore$fxnl, type1.hmmscore$`score_hmm02-type1_v2`)
+  #plot(type1_roc)
+  coords(type1_roc, x="best")
+  #table(Actual=type1.hmmscore$fxnl, Predicted = c("A", "B")[1 + (type1.hmmscore$`score_hmm02-type1_v2` < 792)])
+  
+type2_roc <- roc(type2.hmmscore$fxnl, type2.hmmscore$`score_hmm02-type2_v2`)
+  #plot(type2_roc)
+  coords(type2_roc, x="best")
+  #table(Actual=type2.hmmscore$fxnl, Predicted = c("A", "B")[1 + (type2.hmmscore$`score_hmm02-type2_v2` < 661)])
+  
+combined_roc <- roc(HMM.score$fxnl, HMM.score$`score_hmm02-combined_v2`)
+  #plot(combined_roc)
+  coords(combined_roc, x="best")
+  
+
+p1.hmm01 <- ggplot(HMM.score, aes(x=fxnl, y=score_hmm01, group=hmm)) +
+  theme_pub() +
+  theme(legend.position="none",
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank()
+        ) +
+  geom_point(aes(color=type, fill=type, shape=hmm), position=position_jitter(w=0.2, h=0), alpha=0.5) +
+  scale_shape_manual(values=c("Y"=21, "N"=22)) +
+  scale_color_manual(values = type.pal_v2) +
+  scale_fill_manual(values = type.pal_v2) +
+  geom_hline(yintercept=436) +
+  ylim(0, 1000) +
+  labs(title="hmm01")
+
+p5.hmm02_type1_ge40 <- ggplot(type1.hmmscore, aes(x=fxnl, y=`score_hmm02-type1_v2`, group=hmm)) +
+  theme_pub() +
+  theme(legend.position="none",
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank()) +
+  geom_point(aes(color=type, fill=type, shape=hmm), position=position_jitter(w=0.2, h=0), alpha=0.5) +
+  scale_shape_manual(values=c("Y"=21, "N"=22)) +
+  scale_color_manual(values = type.pal_v2) +
+  scale_fill_manual(values = type.pal_v2) +
+  geom_hline(yintercept=792) +
+  ylim(0, 1000) +
+  labs(title="hmm02-type1")
+
+p6.hmm02_type2_ge40 <- ggplot(type2.hmmscore, aes(x=fxnl, y=`score_hmm02-type2_v2`, group=hmm)) +
+  theme_pub() +
+  theme(legend.position="none",
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank()) +
+  geom_point(aes(color=type, fill=type, shape=hmm), position=position_jitter(w=0.2, h=0), alpha=0.5) +
+  scale_shape_manual(values=c("Y"=21, "N"=22)) +
+  scale_color_manual(values = type.pal_v2) +
+  scale_fill_manual(values = type.pal_v2) +
+  geom_hline(yintercept=661) +
+  ylim(0, 1000) +
+  labs(title="hmm02-type2")
+
+p7.hmm02_combined <- ggplot(HMM.score, aes(x=fxnl, y=`score_hmm02-combined_v2`, group=hmm)) +
+  theme_pub() +
+  theme(legend.position="none",
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank()) +
+  geom_point(aes(color=type, fill=type, shape=hmm), position=position_jitter(w=0.2, h=0), alpha=0.5) +
+  scale_shape_manual(values=c("Y"=21, "N"=22)) +
+  scale_color_manual(values = type.pal_v2) +
+  scale_fill_manual(values = type.pal_v2) +
+  geom_hline(yintercept=455) +
+  ylim(0, 1000) +
+  labs(title="hmm02-combined")
+
+hmm.thresh.merge <- ggarrange(p1.hmm01, p7.hmm02_combined, p5.hmm02_type1_ge40, p6.hmm02_type2_ge40, ncol=1)
+
+print(hmm.thresh.merge)
+
+HMM.thresh.filename <- stringr::str_interp("${out.path}/${fln.prfx}-HMM-thresh_v3_KB.pdf")
+ggsave2(hmm.thresh.merge, filename=HMM.thresh.filename, device=cairo_pdf, height=6, width=1.5)
+
+```
+
+```{r MIC_heatmap}
+
+MIC.results <- HMM.MIC.raw %>%
+  filter(plasmid == "pZE24" & functional == "Y" | functional == "none") %>%
+  arrange(seq_name) %>%
+  arrange(type)
+
+MIC.results.sub <- MIC.results %>%
+  subset(select=-c(code, plasmid, gene, type, functional, TET_MIC, DOX_MIC, TIG_MIC))
+
+MIC.results.sub$seq_name <- factor(MIC.results.sub$seq_name, levels=c('empty', 'Tet(58)','Tet(57)','Tet(56-7)','Tet(56-6)','Tet(56-5)','Tet(56-4)','Tet(56-3)', 'Tet(56-2)', 'Tet(54-2)','Tet(53-2)','Tet(50)','Tet(X20)','Tet(X13.2)','Tet(X7.2)','Tet(X7)'))
+
+MIC.results.melt <- melt(MIC.results.sub)
+
+
+HMM_MIC.fig <- ggplot(MIC.results.melt, aes(variable, seq_name, fill=value)) +
+                theme_pub() +                
+                theme(
+                    axis.line = element_line(color="white"),
+                    axis.text.x = element_text(angle = 90, hjust=0.95),
+                    axis.title.x=element_blank(),
+                    axis.title.y=element_blank(),
+                    legend.position = "right"
+                    ) +
+                geom_tile(color="gray43") +
+                coord_fixed(ratio=1) +
+                scale_fill_gradient("MIC", high="gray10", low="white") + # scale_fill_manual
+                labs()
+
+print(HMM_MIC.fig)
+
+HMM_MIC.fig.fname <- stringr::str_interp("${out.path}/${fln.prfx}-HMM_MIC_KSB_v1.pdf")
+ggsave(HMM_MIC.fig, device=cairo_pdf, filename = HMM_MIC.fig.fname, height=2.25, width=2)
+
+```
+
+```{r MM_kinetics}
+
+hmm.kinetics.df <- hmm.kinetics
+    hmm.kinetics.df$`kcat/Km` <- as.numeric(hmm.kinetics.df$`kcat/Km`)
+    hmm.kinetics.df$`error in kcat/Km` <- as.numeric(hmm.kinetics.df$`error in kcat/Km`)
+
+    
+### Tetracycline
+hmm.kinetics.tet <- hmm.kinetics.df %>%
+  subset(Substrate == "Tet")
+
+hmm.kinetics.tet$Protein <- factor(hmm.kinetics.tet$Protein, 
+                                 levels=c("Tet(50)", "Tet(56-4)", "Tet(56-5)", "Tet(56-6)", "Tet(56-7)", "Tet(58)", 
+                                          "Tet(X7)", "Tet(X13.2)"))
+
+p1.kinetics.tet <- ggplot(hmm.kinetics.tet, aes(x=Protein, y=`kcat/Km`, color=type)) +
+  theme_pub() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust=1),
+    legend.position="none"
+  ) +
+  geom_errorbar(aes(ymin=(`kcat/Km`-`error in kcat/Km`), ymax=(`kcat/Km`+`error in kcat/Km`)), width=0.5) +
+  scale_color_manual(values = type.pal) +
+  geom_point() +
+  labs(title="tetracycline")
+
+print(p1.kinetics.tet)
+
+
+### Doxycycline
+hmm.kinetics.dox <- hmm.kinetics.df %>%
+  subset(Substrate == "Doxy")
+
+hmm.kinetics.dox$Protein <- factor(hmm.kinetics.dox$Protein, 
+                                 levels=c("Tet(50)", "Tet(56-4)", "Tet(56-5)", "Tet(56-6)", "Tet(56-7)", "Tet(58)", 
+                                          "Tet(X7)", "Tet(X13.2)"))
+
+
+p2.kinetics.dox <- ggplot(hmm.kinetics.dox, aes(x=Protein, y=`kcat/Km`, color=type)) +
+  theme_pub() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust=1),
+    legend.position="none"
+  ) +
+  geom_errorbar(aes(ymin=(`kcat/Km`-`error in kcat/Km`), ymax=(`kcat/Km`+`error in kcat/Km`)), width=0.5) +
+  scale_color_manual(values = type.pal) +
+  geom_point() +
+  labs(title="doxycycline")
+
+print(p2.kinetics.dox)
+
+
+merged.hmm.kinetics <- ggarrange(p1.kinetics.tet, p2.kinetics.dox, ncol=1, nrow=2)
+
+
+hmm.kinetics_fname <- stringr::str_interp("reports/${cur.date}/${fln.prfx}-hmm_kinetics_v1_KB.pdf")
+ggsave(merged.hmm.kinetics, device=cairo_pdf, filename = hmm.kinetics_fname, height=5, width=3.5)
+
+```
+
+
+```{r clade_diversity}
+
+### Get AA diversity of ea clade------------------------------------------------
+des2_pre_compare <- seq_compare(seqs_des2_pre, output="dist.mat")
+  des2_pre_compare.df <- as.data.frame(melt(des2_pre_compare)) %>%
+    add_column(clade = "des2_pre")
+  
+des2_post_compare <- seq_compare(seqs_des2_post, output="dist.mat")
+  des2_post_compare.df <- as.data.frame(melt(des2_post_compare)) %>%
+    add_column(clade = "des2_post")
+  
+des1_pre_compare <- seq_compare(seqs_des1_pre, output="dist.mat")
+  des1_pre_compare.df <- as.data.frame(melt(des1_pre_compare)) %>%
+    add_column(clade = "des1_pre")
+  
+des1_post_compare <- seq_compare(seqs_des1_post, output="dist.mat")
+  des1_post_compare.df <- as.data.frame(melt(des1_post_compare)) %>%
+    add_column(clade = "des1_post")
+  
+clade_comb <- rbind(des1_pre_compare.df, des1_post_compare.df, des2_pre_compare.df, des2_post_compare.df) %>%
+  group_by(clade) %>%
+  summarise(mean = mean(value),
+            median = median(value),
+            .groups = 'drop') %>%
+  as.data.frame
+
+```
