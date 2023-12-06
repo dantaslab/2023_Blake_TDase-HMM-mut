@@ -25,47 +25,10 @@ log2.color.count <- 8
 log2.colors <- c("white", "firebrick4")
 log2.colors.pal <- colorRampPalette(log2.colors)(8)
 
-mech.pal <- list(
-            "DES1" = "#7570B3",
-            "DES2" = "#E35231",
-            "EFF" = "#1B9E77",
-            "NA" = "#4D4D4D",
-            "RPP" = "#FBCB7F"
-            )
-
-gene.pal <- c(#DES1 - Blues
-              "tetX7" = "#084594", 
-              "tetX3" = "#2171B5", 
-              "tetX6" = "#4292C6", 
-              "tetX12" = "#6BAED6", 
-              "tetX2" = "#C6DBEF", 
-              "tetX8" = "#DEEBF7",
-              
-              #EFF - Greens
-              "tetA" = "#005A32",
-              "tetL" = "#238B45",
-              "tetB" = "#41AB5D",
-              "tetG" = "#74C476",
-              "tet39" = "#A1D99B",
-              "tetE" = "#C7E9C0",
-              
-              #DES2 - Reds
-              "tet50" = "#99000D",
-              "tet56" = "#CB181D",
-              "tet51" = "#EF3B2C",
-              "tet54" = "#FB6A4A",
-              "tet55" = "#FC9272",
-              "tet47" = "#FCBBA1",
-              
-              #RPP - Purples
-              "tet36" = "#4A1486",
-              "tetO" = "#6A51A3",
-              "tetM" = "#807DBA",
-              "tetW" = "#9E9AC8",
-              "tet32" = "#BCBDDC",
-              "tetS" = "#DADAEB",
-              
-              "empty" = "gray70"
+plot.colors <- c("Tet56-2" = "#00BA38",
+                 "Tet56-3" = "#F8766D",
+                 "Tet50" = "#00BFC4",
+                 "empty" = "#b3b3b3"
 )
 
 #=====Custom defined themes=====================================================

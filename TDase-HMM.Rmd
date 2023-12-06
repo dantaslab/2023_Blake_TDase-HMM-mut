@@ -207,7 +207,6 @@ ggsave(merged.hmm.kinetics, device=cairo_pdf, filename = hmm.kinetics_fname, hei
 
 ```{r clade_diversity}
 
-### Get AA diversity of ea clade------------------------------------------------
 des2_pre_compare <- seq_compare(seqs_des2_pre, output="dist.mat")
   des2_pre_compare.df <- as.data.frame(melt(des2_pre_compare)) %>%
     add_column(clade = "des2_pre")
@@ -232,3 +231,36 @@ clade_comb <- rbind(des1_pre_compare.df, des1_post_compare.df, des2_pre_compare.
   as.data.frame
 
 ```
+
+```{r ATC_inhibition}
+
+# Drop NAs, make categorical
+HMM.atc$TET <- as.factor(HMM.atc$TET)
+HMM.atc$ATC <- as.factor(HMM.atc$ATC)
+HMM.atc_drop <- HMM.atc %>% drop_na(TET, ATC)
+
+ATC_curves_final <- HMM.atc_drop
+ATC_curves_final <- ATC_curves_final[order(ATC_curves_final$TET, decreasing=TRUE),]
+
+
+# Plot
+p01b <- ggplot(ATC_curves_final, aes(x=ATC, y=TET, color=strain, group=strain)) +
+  geom_point() +
+  geom_line() +
+  theme_bw() +
+  theme(
+    aspect.ratio=1
+  ) +
+  #theme_pub() +
+  scale_x_discrete(limits = c("0", "0.25", "0.5", "1", "2", "4", "8")) +
+  scale_y_discrete(limits = c("0", "1", "2", "4", "8", "16", "32")) +
+  scale_color_manual(values=plot.colors) + 
+  labs(x="[ATC] (μg/mL)", y="[TET] (μg/mL)")
+
+print(p01b)
+
+p01b.fname <- stringr::str_interp("reports/${cur.date}/${fln.prfx}-HMM04-05_TET-ATC_curves_KB_v2.pdf")
+ggsave(filename = p01b.fname, device=cairo_pdf, p01b, width=3.25, height=2.25)
+
+```
+

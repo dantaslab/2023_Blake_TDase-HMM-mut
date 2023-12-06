@@ -67,6 +67,7 @@ TDase_HMM_mut.data <- "data/TDase_HMM-mut_data_v3_KB.xlsx"
   HMM.score <- read_excel(TDase_HMM_mut.data, "Tab01_HMM-scores")
   HMM.MIC.raw <- read_excel(TDase_HMM_mut.data, "Tab02_HMM-MIC")
   hmm.kinetics <- read_excel(TDase_HMM_mut.data, "Tab03_HMM-kinetics")
+  HMM.atc <- read_excel(TDase_HMM_mut.data, "Tab03_HMM-ATC")
   mut.MIC.raw <- read_excel(TDase_HMM_mut.data, "Tab04_mut-MIC")
   mut.kinetics <- read_excel(TDase_HMM_mut.data, "Tab05_mut-kinetics")
   mut.therm <- read_excel(TDase_HMM_mut.data, "Tab06_mut-therm")
