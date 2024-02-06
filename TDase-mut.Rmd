@@ -145,45 +145,45 @@ dev.off()
 
 ```{r thermal_stability}
 
-mut.therm$Protein <- factor(mut.therm$Protein, 
+# mut.therm$Protein <- factor(mut.therm$Protein, 
+#                                  levels=c("Tet50_WT", "Tet50_L23A", "Tet50_E102A",  "Tet50_D107A", "Tet50_E147A", "Tet50_S160A", "Tet50_Q300A",
+#                                           "TetX7_WT", "TetX7_G47A", "TetX7_D109A", "TetX7_G311A")) # "TetX7_E104A", "TetX7_I113A", 
+# 
+# p2.therm <- ggplot(mut.therm, aes(x=Protein, y=`Tm B - Mean`, color=type)) +
+#   theme_pub() +
+#   theme(
+#     axis.text.x = element_text(angle = 90, hjust=1)
+#     ) +
+#   geom_errorbar(aes(ymin=`Tm B Lower 95%`, ymax=`Tm B Upper 95%`), width=0.75) +
+#   ylim(0,60) +
+#   scale_color_manual(values = type.pal) +
+#   geom_point()
+# 
+# print(p2.therm)
+# 
+# mut.stability_fname <- stringr::str_interp("reports/${cur.date}/${fln.prfx}-mut_stability_v2_KB.pdf")
+# ggsave(p2.therm, device=cairo_pdf, filename = mut.stability_fname, height=3, width=3) 
+
+
+# Individual data points
+mut.therm_v2$Protein <- factor(mut.therm_v2$Protein, 
                                  levels=c("Tet50_WT", "Tet50_L23A", "Tet50_E102A",  "Tet50_D107A", "Tet50_E147A", "Tet50_S160A", "Tet50_Q300A",
                                           "TetX7_WT", "TetX7_G47A", "TetX7_D109A", "TetX7_G311A")) # "TetX7_E104A", "TetX7_I113A", 
 
-p2.therm <- ggplot(mut.therm, aes(x=Protein, y=`Tm B - Mean`, color=type)) +
+p3.therm <- ggplot(data = mut.therm_v2, aes(x=Protein, y=`Tm B`, color=type)) +
   theme_pub() +
   theme(
-    axis.text.x = element_text(angle = 90, hjust=1)
-  ) +
-  geom_errorbar(aes(ymin=`Tm B Lower 95%`, ymax=`Tm B Upper 95%`), width=0.75) +
+    axis.text.x = element_text(angle = 90, hjust=1),
+    legend.position="none"
+    ) +
+  geom_boxplot(outlier.shape=NA, color="#2a3132") +
+  geom_jitter(width=0.2, alpha=0.8) +
   ylim(0,60) +
   scale_color_manual(values = type.pal) +
-  geom_point()
-
-print(p2.therm)
-
-mut.stability_fname <- stringr::str_interp("reports/${cur.date}/${fln.prfx}-mut_stability_v2_KB.pdf")
-ggsave(p2.therm, device=cairo_pdf, filename = mut.stability_fname, height=3, width=3) 
-
-
-# fractional
-mut.therm$Protein <- factor(mut.therm$Protein, 
-                                 levels=c("Tet50_WT", "Tet50_L23A", "Tet50_E102A",  "Tet50_D107A", "Tet50_E147A", "Tet50_S160A", "Tet50_Q300A",
-                                          "TetX7_WT", "TetX7_G47A", "TetX7_D109A", "TetX7_G311A")) # "TetX7_E104A", "TetX7_I113A", 
-
-p3.therm <- ggplot(mut.therm, aes(x=Protein, y=Tm_frac, color=type)) +
-  theme_pub() +
-  theme(
-    axis.text.x = element_text(angle = 90, hjust=1)
-  ) +
-  #geom_errorbar(aes(ymin=`Tm B Lower 95%`, ymax=`Tm B Upper 95%`), width=0.75) +
-  ylim(0,1.2) +
-  scale_color_manual(values = type.pal) +
-  geom_point()
+  ylab("Tm (°C)")
 
 print(p3.therm)
 
-mut.stability_fname <- stringr::str_interp("reports/${cur.date}/${fln.prfx}-mut_stability_v3_KB.pdf")
-ggsave(p3.therm, device=cairo_pdf, filename = mut.stability_fname, height=3, width=3) 
 
 ```
 

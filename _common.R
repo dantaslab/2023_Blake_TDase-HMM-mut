@@ -62,7 +62,7 @@ library(pROC)
 ###---Load data-----------------------------------------------------------------
 
 # Excel sheet input
-TDase_HMM_mut.data <- "data/TDase_HMM-mut_data_v3_KB.xlsx"
+TDase_HMM_mut.data <- "data/TDase_HMM-mut_data_v4_KB.xlsx"
 
   HMM.score <- read_excel(TDase_HMM_mut.data, "Tab01_HMM-scores")
   HMM.MIC.raw <- read_excel(TDase_HMM_mut.data, "Tab02_HMM-MIC")
@@ -71,6 +71,7 @@ TDase_HMM_mut.data <- "data/TDase_HMM-mut_data_v3_KB.xlsx"
   mut.MIC.raw <- read_excel(TDase_HMM_mut.data, "Tab04_mut-MIC")
   mut.kinetics <- read_excel(TDase_HMM_mut.data, "Tab05_mut-kinetics")
   mut.therm <- read_excel(TDase_HMM_mut.data, "Tab06_mut-therm")
+  mut.therm_v2 <- read_excel(TDase_HMM_mut.data, "Tab06_mut-therm_v2")
   
   X7.domain <- read_excel(TDase_HMM_mut.data, "Tab07a_dom-X7")
   tet50.domain <- read_excel(TDase_HMM_mut.data, "Tab07b_dom-50")
